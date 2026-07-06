@@ -1,0 +1,7 @@
+title: Fragrance Dataset Overview Dashboard
+description: A data analytics portfolio project using MySQL to clean fragrance data and Tableau to visualize fragrance trends.
+theme: jekyll-theme-minimal
+show_downloads: true
+
+github:
+  is_project_page: true

@@ -45,8 +45,11 @@ The final dashboard highlights:
 - [User Requirements Document DOCX](assets/docs/user_requirements_document.docx)
 - [Sample Raw Dataset](assets/datasets/raw_fragrance_dataset_sample.csv)
 - [Dataset Note](assets/datasets/dataset_note.md)
-- [SQL Files](assets/sql/)
-- [Project Screenshots](assets/images/)
+- [Create Raw Table SQL](assets/sql/01_create_raw_table.sql)
+- [Import Data SQL](assets/sql/02_import_data.sql)
+- [Cleaned View SQL](assets/sql/03_create_cleaned_view.sql)
+- [Quality Checks SQL](assets/sql/04_quality_checks.sql)
+- [Dashboard Screenshot](assets/images/tableau_final_dashboard.png)
 
 ## Dataset Note
 

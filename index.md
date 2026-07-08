@@ -40,15 +40,23 @@ The final dashboard highlights:
 
 ## Project Files
 
-- [Full README](README.md)
+- [Full README](https://github.com/alexko132/fragrance_data_analysis/blob/main/README.md)
 - [User Requirements Document PDF](assets/docs/user_requirements_document.pdf)
 - [User Requirements Document DOCX](assets/docs/user_requirements_document.docx)
 - [Sample Raw Dataset](assets/datasets/raw_fragrance_dataset_sample.csv)
 - [Dataset Note](assets/datasets/dataset_note.md)
+
+### SQL Files
+
+- [All SQL Files](https://github.com/alexko132/fragrance_data_analysis/tree/main/assets/sql)
 - [Create Raw Table SQL](assets/sql/01_create_raw_table.sql)
 - [Import Data SQL](assets/sql/02_import_data.sql)
 - [Cleaned View SQL](assets/sql/03_create_cleaned_view.sql)
 - [Quality Checks SQL](assets/sql/04_quality_checks.sql)
+
+### Screenshots
+
+- [Project Screenshots](https://github.com/alexko132/fragrance_data_analysis/tree/main/assets/images)
 - [Dashboard Screenshot](assets/images/tableau_final_dashboard.png)
 
 ## Dataset Note
@@ -57,4 +65,4 @@ The full raw dataset is not included in this repository because it exceeds GitHu
 
 ## View the Repository
 
-For the full project explanation, SQL process, data quality checks, dashboard results, and future improvements, see the [README](README.md).
+For the full project explanation, SQL process, data quality checks, dashboard results, and future improvements, see the [README](https://github.com/alexko132/fragrance_data_analysis/blob/main/README.md).

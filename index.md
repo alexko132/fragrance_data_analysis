@@ -3,7 +3,6 @@ layout: default
 title: Fragrance Dataset Overview Dashboard
 ---
 
-# Fragrance Dataset Overview Dashboard
 
 **SQL Data Cleaning + Tableau Visualization Project**
 

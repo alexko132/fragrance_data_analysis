@@ -10,7 +10,7 @@ from pathlib import Path
 import pandas as pd
 
 DATA_DIR = Path("data/raw")
-CSV_NAME = "raw_fragrance_dataset_sample.csv" \
+CSV_NAME = "raw_fragrance_dataset_full.csv" \
 ""          # <-- change to your actual filename
 KAGGLE_DATASET = "owner/dataset-name"  # <-- fill in later if you wire up Kaggle
 
@@ -23,6 +23,8 @@ RAW_COLUMNS = {
     "Rating Value": "string",   # converted to float in the clean stage
     "Rating Count": "string",   # converted to int in the clean stage
     "Main Accords": "string",   # list-like text, parsed in the clean stage
+    "Perfumers": "string",       # list-like text, parsed in the clean stage
+    "Description": "string",
 }
 
 

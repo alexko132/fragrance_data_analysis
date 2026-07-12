@@ -62,6 +62,8 @@ The raw dataset contained fragrance records with the following fields:
 - Rating Value
 - Rating Count
 - Main Accords
+- Perfumers
+- Description
 
 The raw data required significant cleaning before it could be analyzed:
 

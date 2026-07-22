@@ -1,318 +1,205 @@
-# Fragrance Dataset Overview Dashboard
+# Fragrance Dataset Analysis
 
-**SQL Data Cleaning + Tableau Visualization Project**
+**End-to-End Data Pipeline: Python (pandas) + SQL + Tableau**
 
-Cleaned fragrance data from MySQL visualized in Tableau
+A dual-implementation ETL and analysis pipeline over ~70K web-scraped Fragrantica
+records. The same cleaning logic is implemented twice — once in MySQL, once in
+pandas — and both produce an identical 69,948-row validated dataset.
+
+**[View the Tableau dashboard →](https://alexko132.github.io/fragrance_data_analysis/)** <!-- CHECK link -->
 
 ---
 
 ## 1. Project Overview
 
-This project analyzes a raw fragrance dataset using MySQL for data cleaning, deduplication, transformation, and quality testing. The cleaned dataset was then visualized in Tableau to create a dashboard summarizing fragrance trends by gender, brand, rating, and fragrance accords.
+This project takes a raw, messy web-scraped fragrance dataset and turns it into a
+validated analytical dataset, then answers business questions about brand
+performance, gender segmentation, and perfumer influence.
 
-The main objective was to turn messy raw fragrance data into a cleaned, validated dataset that could be used for dashboard analysis. The final Tableau dashboard, **Fragrance Dataset Overview**, provides a high-level overview of the dataset and highlights major fragrance trends.
+The pipeline is implemented in **both SQL and Python**. This is intentional: the
+two implementations are verified against each other, and agreement between them
+is the project's core correctness guarantee. The Python implementation extends
+the SQL version with automated testing and statistical analysis.
 
-![Fragrance Dataset Overview Dashboard](assets/images/tableau_final_dashboard.png)
-
-- **Dataset source:** Sample included in `assets/datasets/`; full raw dataset excluded due to GitHub file size limits
-- **Tableau Public:** Not published yet
-- **GitHub repository:** Current repository
-
----
-
-## Project Links
-
-- [User Requirements Document PDF](assets/docs/user_requirements_document.pdf)
-- [User Requirements Document DOCX](assets/docs/user_requirements_document.docx)
-- [Sample Raw Dataset](assets/datasets/raw_fragrance_dataset_sample.csv)
-- [Dataset Note](assets/datasets/dataset_note.md)
-- [SQL Files](assets/sql/)
-- [Project Screenshots](assets/images/)
+**Pipeline:** raw CSV → deduplication → cleaning & type coercion → automated
+validation → cleaned dataset → Tableau dashboard + Jupyter analysis
 
 ---
 
-## 2. Business/Data Questions
+## 2. Results at a Glance
 
-This project was designed to answer the following questions:
+| Metric | Value |
+|---|---|
+| Raw records ingested | 70,103 |
+| Duplicate records removed | 155 |
+| Cleaned records | **69,948** |
+| Aggregate user ratings represented | 14,400,241 |
+| Average rating | 3.98 / 5 |
+| Automated quality checks passing | 8 / 8 |
+| Gender split | Unisex 29,607 · Women 28,069 · Men 12,269 |
 
-- How are fragrances distributed across gender categories (Men, Women, Unisex)?
-- Which brands have the largest number of fragrances in the dataset?
-- Which fragrances are the highest rated when filtered to a meaningful number of ratings (100+)?
-- What are the most common primary fragrance accords?
-- How large and reliable is the dataset after cleaning and deduplication?
-
----
-
-## 3. Tools Used
-
-- **MySQL** – data cleaning, deduplication, transformation, and validation
-- **Tableau** – dashboard creation and visualization
-- **GitHub** – project documentation and version control
-- **CSV / raw dataset** – original data source
+Both the SQL view and the pandas pipeline produce these figures independently.
 
 ---
 
-## 4. Dataset Description
+## 3. Repository Structure
 
-The raw dataset contained fragrance records with the following fields:
+```
+├── src/
+│   ├── load_data.py        # Stage 1: acquisition + raw load (replaces 01, 02)
+│   ├── clean_data.py       # Stage 2: dedup + cleaning (replaces 03)
+│   └── pipeline.py         # Orchestration: load → clean → export
+├── tests/
+│   └── test_data_quality.py # Stage 3: 8 pytest checks (replaces 04)
+├── notebooks/
+│   └── analysis.ipynb      # Exploratory analysis + hypothesis testing
+├── assets/
+│   ├── sql/                # Original MySQL implementation (01–04)
+│   ├── datasets/           # Sample CSV (full dataset excluded by size)
+│   └── images/             # Dashboard screenshots
+├── requirements.txt
+└── README.md
+```
 
-- URL
-- Name
-- Gender
-- Rating Value
-- Rating Count
-- Main Accords
+### SQL → Python equivalence map
 
-The raw data required significant cleaning before it could be analyzed:
-
-- Perfume names could be extracted from URLs
-- Brand names could be extracted from URLs
-- Gender values needed to be standardized
-- Rating values needed to be converted into numeric decimal values
-- Rating counts needed to be converted into numeric whole numbers
-- Main accords were stored as list-like text (e.g., `['citrus', 'musky', 'woody', ...]`) and needed to be cleaned and split into separate columns
-- Duplicate records needed to be removed using normalized URLs
-
-> Note: The full raw dataset is not included in this repository because it exceeds GitHub's file size limit. A smaller sample file, `raw_fragrance_dataset_sample.csv`, is included in `assets/datasets/` for preview purposes. The SQL cleaning process was performed locally on the full dataset, and the final cleaned view contained 69,948 fragrance records.
+| SQL file | Python equivalent |
+|---|---|
+| `01_create_raw_table.sql` | `RAW_COLUMNS` schema spec in `load_data.py` |
+| `02_import_data.sql` | `load_raw()` in `load_data.py` |
+| `03_create_cleaned_view.sql` | `deduplicate()` + `clean()` in `clean_data.py` |
+| `04_quality_checks.sql` | `tests/test_data_quality.py` (pytest) |
 
 ---
 
-## 5. Data Cleaning Process
+## 4. How to Run
 
-All cleaning was performed in MySQL. The full SQL is available in the `assets/sql/` folder; the process is summarized below.
+```bash
+# Setup
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
 
-**Main SQL objects:**
+# Run the full pipeline (load → clean → export)
+python3 src/pipeline.py
 
-- `fra_perfumes_raw` – raw imported table
-- `fra_perfumes_raw_deduped` – deduplicated table
-- `vw_fragrances_cleaned` – cleaned SQL view used for analysis and the dashboard
+# Run the automated quality checks
+python3 -m pytest tests/ -v
+```
 
-**Deduplication (`fra_perfumes_raw_deduped`):**
+The full raw dataset exceeds GitHub's file size limit and is excluded via
+`.gitignore`. A 1,000-row sample is included in `assets/datasets/` so the
+pipeline structure can be inspected without the full file.
 
-1. Grouped records by `TRIM(LOWER(url))` so that each duplicate group represented the same fragrance record under a normalized URL.
-2. Used `MIN(url)` to keep one URL per duplicate group.
-3. Used `MAX()` on Name, Gender, Rating Value, Rating Count, and Main Accords to select one representative non-null value from each duplicate group when available.
+---
 
-**Cleaning and transformation (`vw_fragrances_cleaned`):**
+## 5. Cleaning Logic
 
-4. Extracted perfume names from the last section of the URL, using the raw Name field as a fallback when the URL-derived name was missing or blank.
-5. Extracted brand names from the URL section after `/perfume/`.
-6. Standardized gender into three values: Men, Women, and Unisex.
-7. Converted rating values into decimal numbers.
-8. Converted rating counts into unsigned integers.
-9. Cleaned the Main Accords field by removing brackets and apostrophes.
-10. Split the cleaned accords into separate columns: Main Accord 1 through Main Accord 5.
+Transformations applied identically in both implementations:
 
-See `assets/sql/03_create_cleaned_view.sql` for the full transformation logic.
+- **Deduplication** — records grouped by normalized URL (`TRIM(LOWER(url))` /
+  `.str.strip().str.lower()`), keeping one row per fragrance.
+- **Perfume name** — derived from the URL slug (strip `.html`, strip trailing
+  numeric ID, replace hyphens with spaces), falling back to the raw `Name` field
+  only when the URL yields nothing. The raw `Name` field is contaminated with
+  brand and gender text (e.g. `"Sweet Coffee Anthologyfor women"`), so the URL is
+  the more reliable source.
+- **Brand** — extracted from the URL segment following `/perfume/`.
+- **Gender** — standardized to Men / Women / Unisex via an **ordered** matching
+  cascade. Order is load-bearing: `"women"` contains the substring `"men"`, so
+  `women and men` → `unisex` → `women` → `men` must be evaluated in that
+  sequence or every women's fragrance is misclassified.
+- **Rating Value** — European decimal repair (`,` → `.`), regex validation
+  against `^[0-9]+(\.[0-9]+)?$`, then cast to decimal. Non-conforming values
+  become NULL rather than raising.
+- **Rating Count** — all non-digit characters stripped (handles thousands
+  separators), then cast to integer.
+- **Main Accords** — list-like strings (`"['citrus', 'woody']"`) stripped of
+  brackets and quotes, split on commas into five separate accord columns.
+
+Raw columns are retained alongside cleaned ones (`Raw Name`, `Raw Gender`,
+`Raw Main Accords`), which is what allows the quality checks to verify that no
+value present in the raw data was lost during cleaning.
 
 ---
 
 ## 6. Data Quality Checks
 
-Before building the dashboard, a set of SQL validation checks was run against the cleaned view (see `assets/sql/04_quality_checks.sql`). Each check is documented with a screenshot in the `assets/images/` folder.
+All 8 checks pass on the current dataset. In Python they run as pytest
+assertions, so validation is reproducible with one command rather than
+manually re-run queries.
 
-| Check | Rule | Result |
-|---|---|---|
-| Row count check | Confirms the total row count of the cleaned view | 69,948 rows |
-| Duplicate URL check | Should return 0 rows after deduplication | Passed (0 duplicates) |
-| Missing cleaned perfume name check | Cleaned names should not become missing if raw data had usable values | Passed (0 rows) |
-| Missing cleaned brand check | Cleaned brands should not become missing if raw data had usable values | Passed (0 rows) |
-| Missing cleaned accords check | Cleaned accords should not become missing if raw data had usable values | Passed (0 rows) |
-| Invalid gender value check | Gender must only be Men, Women, or Unisex | Passed (0 invalid values) |
-| Invalid rating value check | Rating Value must be between 0 and 5 | Passed (0 invalid values) |
-| Invalid rating count check | Rating Count cannot be negative | Passed (0 invalid values) |
-
-All checks passed, confirming the cleaned dataset was ready for visualization.
+1. Total row count equals 69,948
+2. No duplicate URLs
+3. No perfume names lost during cleaning (present in raw, missing in cleaned)
+4. No brands lost during cleaning
+5. No accords lost during cleaning
+6. `Gender` contains only Men / Women / Unisex / NULL
+7. `Rating Value` falls within 0–5
+8. `Rating Count` is never negative
 
 ---
 
-## 7. Dashboard Overview
+## 7. Analysis & Key Findings
 
-**Title:** Fragrance Dataset Overview
-**Subtitle:** Cleaned fragrance data from MySQL visualized in Tableau
+Full analysis in [`notebooks/analysis.ipynb`](notebooks/analysis.ipynb).
 
-**KPIs:**
+**Rating volume is extremely long-tailed.** The median fragrance has 26 ratings;
+the mean is ~226, pulled up by a small number of blockbusters (max 29,858). This
+finding drives the rest of the analysis: unweighted brand averages are unreliable,
+so brand comparisons use a **volume-weighted mean** and a minimum catalog
+threshold.
 
-- **Total Fragrances:** 69,948
-- **Average Rating:** 3.98 — calculated from fragrances with valid numeric rating values; null or invalid rating values were converted to NULL during cleaning and excluded from the average
-- **Total Rating Count:** 14,400,241
+**Ratings themselves are tightly clustered.** Median 4.0, mean 3.98, standard
+deviation 0.52, IQR 3.75–4.25 — left-skewed, with a longer tail toward low
+ratings than high. Meaningful differences between segments are therefore small
+in absolute terms.
 
-**Visualizations:**
+**Catalog size does not predict quality.** Across 1,534 brands with at least 10
+fragrances, the correlation between catalog size and volume-weighted rating is
+r ≈ -0.07 — effectively nil. Prolific houses are neither systematically better
+nor worse than selective ones. However, the choice of averaging method matters a
+great deal for individual brands: the simple mean overstates quality by as much
+as 0.33 points (Dzintars) and 0.19 points (The Dua Brand), while understating it
+by 0.14 points (Al Haramain Perfumes).
 
-- Fragrances by Gender (bar chart)
-- Top Brands by Fragrance Count (bar chart)
-- Top Rated Fragrances with 100+ Ratings (bar chart)
-- Most Common Primary Accords (treemap)
+**Gender differences are statistically significant but practically negligible.**
+One-way ANOVA (p = 5.7e-32) and Kruskal-Wallis (p = 5.1e-92) both reject the null
+hypothesis — but at n = 69,948, nearly any difference will. Effect size tells the
+real story: eta-squared = 0.0023, meaning gender explains roughly **0.2%** of
+rating variance. The largest gap (Women vs. Unisex, 0.055 rating points) has
+Cohen's d = -0.10, below the conventional threshold for a "small" effect. The
+practical conclusion is that gender segmentation is not a useful predictor of
+fragrance rating.
 
----
-
-## 8. Key Results
-
-**Fragrances by Gender**
-
-| Gender | Fragrance Count |
-|---|---|
-| Unisex | 29,607 |
-| Women | 28,069 |
-| Men | 12,269 |
-
-> Note: The gender breakdown totals 69,945, while the dataset contains 69,948 fragrances. The remaining 3 records had null or unclassified gender values after cleaning, since the gender standardization rule only assigns records to Men, Women, or Unisex when the raw gender value maps clearly to one of those categories.
-
-**Top Brands by Fragrance Count**
-
-| Brand | Fragrance Count |
-|---|---|
-| The Dua Brand | 1,638 |
-| Avon | 1,284 |
-| Zara | 946 |
-| Victoria's Secret | 764 |
-| Bath & Body Works | 623 |
-| Jequiti | 621 |
-| O Boticario | 551 |
-| Guerlain | 526 |
-| Natura | 466 |
-| Dzintars | 464 |
-
-**Top Rated Fragrances with 100+ Ratings**
-
-| Fragrance | Avg. Rating |
-|---|---|
-| Spiderman | 4.83 |
-| The Heritage Blend | 4.79 |
-| Taif Rose | 4.79 |
-| Palace Oud | 4.79 |
-| Alhambra Oud | 4.72 |
-| Hard Candy Elixir | 4.71 |
-| Vol de Nuit Extract | 4.70 |
-| Roberto Cavalli Uomo Gold | 4.69 |
-| Estee Extrait | 4.69 |
-| Aoud Absolue Precieux | 4.69 |
-
-**Most Common Primary Accords**
-
-| Accord | Count |
-|---|---|
-| Woody | 9,718 |
-| Citrus | 9,280 |
-| Fruity | 5,530 |
-| White Floral | 5,181 |
-| Floral | 4,910 |
-| Aromatic | 4,229 |
-| Amber | 4,112 |
-| Warm Spicy | 3,635 |
-| Sweet | 3,327 |
-| Vanilla | 2,476 |
+**Perfumer data is directional only.** 61.1% of records have no perfumer
+credited, so perfumer-level results should not be read as population-level
+claims. Among the 406 perfumers with at least 20 credited fragrances, the
+highest volume-weighted averages cluster between 4.43 and 4.69.
 
 ---
 
-## 9. Insights
+## 8. Known Data Limitations
 
-- **Unisex fragrances make up the largest gender category** in the cleaned dataset, with women's fragrances close behind. Men's fragrances appear much less frequently than unisex and women's fragrances.
-- **The Dua Brand, Avon, and Zara have the highest fragrance counts in this dataset**, showing which brands are most represented by number of records.
-- **Woody and citrus are the most common primary accords**, each appearing as the leading accord in over 9,000 fragrances.
-- **The top-rated fragrance chart was filtered to fragrances with 100+ ratings** to avoid showing fragrances with high ratings but very few reviews, making the rankings more reliable.
-
-> Note: These results reflect the cleaned dataset used in this project and may not represent the entire global fragrance market.
-
----
-
-## 10. Project Evidence / Screenshots
-
-The `assets/images/` folder documents each stage of the project so the work can be verified without re-running the SQL:
-
-- `raw_data_preview_part_1.png` and `raw_data_preview_part_2.png` – original raw table before cleaning
-- `deduped_table_preview.png` – deduplicated table
-- `cleaned_view_preview_part_1.png`, `cleaned_view_preview_part_2.png`, and `cleaned_view_preview_part_3.png` – cleaned SQL view used for Tableau
-- `row_count_check.png` – confirms the cleaned row count
-- `duplicate_url_check.png` – confirms duplicate URLs were removed
-- `missing_names_check.png` – validates cleaned perfume names
-- `missing_brands_check.png` – validates cleaned brands
-- `missing_accords_check.png` – validates cleaned accords
-- `invalid_gender_check.png` – validates standardized gender values
-- `invalid_rating_value_check.png` – validates rating values are between 0 and 5
-- `invalid_rating_count_check.png` – validates rating counts are not negative
+- **Perfumer coverage** — 61.1% of records have no perfumer credited.
+- **Perfumer name fragmentation** — near-duplicate name spellings appear in the
+  source data (e.g. `"Fahran S Ali"` / `"Mahran S Ali"` share identical
+  fragrance counts and ratings, indicating a scrape artifact rather than two
+  individuals). <!-- CHECK: update with the fuzzy-match pair count once run -->
+  Perfumer-level counts are therefore lower bounds. Names were left unmodified
+  rather than manually merged, since no authoritative source resolves the
+  correct spelling.
+- **Unclassifiable gender** — 3 records have gender text that matches none of
+  the mapping patterns and are retained as NULL.
+- **Scope difference between implementations** — the Python pipeline retains the
+  `Perfumers` column, which the SQL view does not carry. All shared columns,
+  the row count, and every KPI are identical between the two implementations.
+- **Rating recency** — the dataset is a point-in-time scrape; ratings and counts
+  reflect the date of collection, not current values.
 
 ---
 
-## 11. Project Files
+## 9. Tools
 
-```
-fragrance_data_analysis/
-│
-├── README.md
-├── index.md
-├── _config.yml
-│
-├── assets/
-│   ├── datasets/
-│   │   ├── raw_fragrance_dataset_sample.csv
-│   │   └── dataset_note.md
-│   │
-│   ├── docs/
-│   │   ├── user_requirements_document.docx
-│   │   └── user_requirements_document.pdf
-│   │
-│   ├── images/
-│   │   ├── tableau_final_dashboard.png
-│   │   ├── raw_data_preview_part_1.png
-│   │   ├── raw_data_preview_part_2.png
-│   │   ├── deduped_table_preview.png
-│   │   ├── cleaned_view_preview_part_1.png
-│   │   ├── cleaned_view_preview_part_2.png
-│   │   ├── cleaned_view_preview_part_3.png
-│   │   ├── row_count_check.png
-│   │   ├── duplicate_url_check.png
-│   │   ├── missing_names_check.png
-│   │   ├── missing_brands_check.png
-│   │   ├── missing_accords_check.png
-│   │   ├── invalid_gender_check.png
-│   │   ├── invalid_rating_value_check.png
-│   │   └── invalid_rating_count_check.png
-│   │
-│   └── sql/
-│       ├── 01_create_raw_table.sql
-│       ├── 02_import_data.sql
-│       ├── 03_create_cleaned_view.sql
-│       └── 04_quality_checks.sql
-```
-
-> The full raw dataset (`raw_fragrance_dataset.csv`) is not included in the repository due to GitHub file size limits. Only a sample is provided in `assets/datasets/`.
-
----
-
-## 12. How to Reproduce
-
-1. Review the sample raw dataset in `assets/datasets/` to understand the raw data structure.
-2. Note that the sample CSV is included only to show the raw data structure — it will not reproduce the exact final dashboard numbers.
-3. To reproduce the exact final dashboard numbers, the full raw dataset is needed.
-4. The full raw dataset was processed locally in MySQL because it was too large for GitHub.
-5. Run the SQL files in `assets/sql/` in order: create the raw table, import the data, create the cleaned view (`vw_fragrances_cleaned`), and run the quality checks.
-6. Connect Tableau to the cleaned view (or an exported cleaned dataset).
-7. Build the dashboard visuals: KPIs, gender bar chart, top brands chart, top rated fragrances chart, and the primary accords treemap.
-
-> The sample CSV is included to show the structure of the raw data. Reproducing the exact dashboard totals requires the full raw dataset, which was processed locally because it was too large for GitHub.
-
----
-
-## 13. Business/Portfolio Value
-
-This project demonstrates an end-to-end analytics workflow, including:
-
-- SQL data cleaning and transformation
-- Deduplication of messy real-world records
-- Data validation with repeatable quality checks
-- Dashboard design and KPI selection
-- Data storytelling and communicating insights visually
-- Preparing messy raw data so it can be trusted for analysis
-
-These are the same steps required in a real business setting when raw operational or scraped data needs to be converted into a reliable reporting layer.
-
----
-
-## 14. Future Improvements
-
-- Add additional accord columns (beyond Main Accord 1–5) or model accords in a normalized long format for deeper analysis.
-- Analyze the relationship between rating value, rating count, and gender category.
-- Add brand-level average ratings to compare brand quality, not just volume.
-- Automate the cleaning pipeline with stored procedures or a scheduled ETL job.
-- Publish the dashboard to Tableau Public and add interactive filters (brand, gender, accord).
+**Python** (pandas, matplotlib, seaborn, scipy, pytest, Jupyter) ·
+**MySQL** · **Tableau** · **Git / GitHub Pages**

@@ -65,6 +65,7 @@ Shipping a dashboard on top of this data without addressing these issues first w
 
 ## 5. Repository Structure
 
+```
 fragrance_data_analysis/
 ├── README.md
 ├── requirements.txt
@@ -86,10 +87,11 @@ fragrance_data_analysis/
 │       └── fragrances_cleaned.csv
 │
 └── assets/
-├── sql/                 # Original MySQL implementation (01–04)
-├── datasets/            # Sample raw CSV (full dataset excluded by size)
-├── docs/                # User requirements document
-└── images/              # Dashboard + pipeline screenshots
+    ├── sql/                 # Original MySQL implementation (01–04)
+    ├── datasets/            # Sample raw CSV (full dataset excluded by size)
+    ├── docs/                # User requirements document
+    └── images/              # Dashboard + pipeline screenshots
+```
 
 ### SQL → Python equivalence map
 
